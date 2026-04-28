@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đăng ký khuôn mặt</title>
+    <style>
+        video, canvas { display: none; }
+        .live-preview { width: 400px; border: 2px solid #333; display: block !important; }
+    </style>
+</head>
+<body>
+    <h1>Đăng ký thông tin điểm danh</h1>
+    <input type="text" id="user_id" placeholder="Nhập ID (ví dụ: 2)">
+    <input type="text" id="user_name" placeholder="Nhập Tên (ví dụ: Ham)">
+    <br><br>
+    <video id="video" class="live-preview" autoplay></video>
+    <button id="capture">Bắt đầu đăng ký (Chụp 100 ảnh)</button>
+    <p id="status"></p>
+
+    <script>
+        const video = document.getElementById('video');
+        const status = document.getElementById('status');
+        const btn = document.getElementById('capture');
+
+        // Yêu cầu quyền truy cập Camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; });
+
+        btn.onclick = async () => {
+            const id = document.getElementById('user_id').value;
+            const name = document.getElementById('user_name').value;
+            if(!id || !name) return alert("Hãy nhập ID và Tên!");
+
+            for (let i = 0; i < 100; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+
+                const dataUrl = canvas.toDataURL('image/jpeg');
+
+                await fetch('/upload_face', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, name: name, image: dataUrl })
+                });
+
+                status.innerText = `Đã gửi ${i+1}/100 ảnh...`;
+                await new Promise(r => setTimeout(r, 100)); // Nghỉ 100ms giữa mỗi tấm
+            }
+            status.innerText = "Đăng ký thành công! Hãy báo cho quản trị viên train lại máy.";
+        };
+    </script>
+</body>
+</html>

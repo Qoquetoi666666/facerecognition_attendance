@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tự điểm danh từ xa</title>
+    <style>
+        .container { text-align: center; font-family: Arial; }
+        video { width: 90%; max-width: 500px; border: 5px solid #333; border-radius: 10px; }
+        #result { font-size: 24px; color: green; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hệ thống điểm danh từ xa</h1>
+        <video id="webcam" autoplay playsinline></video>
+        <div id="result">Đang chờ nhận diện...</div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const resultDiv = document.getElementById('result');
+
+        // 1. Bật camera của chính người đang xem web
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { alert("Vui lòng cho phép truy cập camera!"); });
+
+        // 2. Tự động gửi ảnh về server mỗi 2 giây để điểm danh
+        setInterval(async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            const response = await fetch('/self_attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUrl })
+            });
+
+            const data = await response.json();
+            if (data.name !== "Unknown") {
+                resultDiv.innerText = "Chào " + data.name + "! Đã điểm danh xong.";
+                resultDiv.style.color = "green";
+            } else {
+                resultDiv.innerText = "Đang quét khuôn mặt...";
+                resultDiv.style.color = "orange";
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

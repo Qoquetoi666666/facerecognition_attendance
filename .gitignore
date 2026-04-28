@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+dataset/
+trainer/trainer.yml
+data/*.xlsx
+*.pyc
+.idea/
